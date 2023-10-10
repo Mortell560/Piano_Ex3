@@ -105,11 +105,8 @@ int main() {
       if (c >= '0' && c <= '9'){
           note = c-'0';
       }
-      else if (c == 'a'){
-          note = 10;
-      }
-      else if (c == 'z'){
-          note = 11;
+      else if (c >= 'a' && c <= 'z'){
+          note = c-'a'+'0';
       }
       freq = notes[note]*pow(2.0, curr_gamme-3);
 
