@@ -48,7 +48,7 @@ V 2*SI
 B 4*DO
 N 4*DOd*/
 
-volatile char c = '\0';
+char c = 0;
 
 PwmOut speaker(p26);
 AnalogIn pot1(p19);
@@ -90,40 +90,51 @@ void onCharReceived(){
 }
 
 int main() {
-    pc.attach(&onCharReceived);
+    //pc.attach(&onCharReceived);
     const int ngammes = 10;
     float freq = 1;
     int old_char = 0;
     int note = 0;
 
     while(1) {
-      float pot_val1 = pot1.read();
-      float pot_val2 = pot2.read();
-      float infos[2] = {pot_val1, pot_val2};
-      int curr_gamme = AnalogIn2Index(infos[1], ngammes);
-      //PlayNote(DO, infos[0]);
-      if (c >= '0' && c <= '9'){
-          note = c-'0';
+      if (pc.readable()){
+        float pot_val1 = pot1.read();
+        float pot_val2 = pot2.read();
+        float infos[2] = {pot_val1, pot_val2};
+        int curr_gamme = AnalogIn2Index(infos[1], ngammes);
+        c = pc.getc();
+        //PlayNote(DO, infos[0]);
+        if (c >= '0' && c <= '9'){
+            note = c-'0';
+            freq = notes[note]*pow(2.0, curr_gamme-3);
+            PlayNote(freq, infos[0]);
+            c =0;
+            if (pc.writeable()){pc.printf("chiffre jouée");}
+        }
+        else if (c >= 'a' && c <= 'z'){
+            note = c-'a';
+            freq = azerty2notes[note]*pow(2.0, curr_gamme-3);
+            PlayNote(freq, infos[0]);
+            c=0;
+            if (pc.writeable()){pc.printf("lettre jouée");}
+        }
+        //freq = notes[note]*pow(2.0, curr_gamme-3);
+
+        if (old_char != c && pc.writeable()){
+            old_char = c;
+            pc.printf(msg[0], infos[0]*100);
+            pc.printf(msg[1], curr_gamme);
+            pc.printf(msg[2], notes_str[note]);
+        }
+
+        lcd.locate(0, 4);
+        lcd.printf("Volume: %3.1f", infos[0] * 100);
+        lcd.locate(0, 12);
+        lcd.printf("Gamme: %i", curr_gamme);
+
       }
-      else if (c >= 'a' && c <= 'z'){
-          note = c-'a'+'0';
-      }
-      freq = notes[note]*pow(2.0, curr_gamme-3);
 
-      if (old_char != c){
-          old_char = c;
-          pc.printf(msg[0], infos[0]*100);
-          pc.printf(msg[1], curr_gamme);
-          pc.printf(msg[2], notes_str[note]);
-      }
-
-      lcd.locate(0, 4);
-      lcd.printf("Volume: %3.1f", infos[0] * 100);
-      lcd.locate(0, 12);
-      lcd.printf("Gamme: %i", curr_gamme);
-
-      PlayNote(freq, infos[0]);
-      wait_us(1/freq);
-
-  }
+    }
 }
+
+// Le code est bon, mais ça marche pas (verifie en cours le 24/10)
